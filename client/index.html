@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Секретен канал</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div class="gl-page">
+    <header class="gl-page-header">
+      <div class="gl-page-title">
+        <span class="gl-dot"></span>
+        <span>secure channel</span>
+      </div>
+      <div class="gl-header-right">
+        <span class="gl-status-pill" id="operatorStatus">
+          <span class="gl-status-dot"></span>
+          <span id="operatorStatusText">проверка…</span>
+        </span>
+        <button id="logoutBtn" class="gl-icon-btn" style="display:none;" title="Изход">⎋</button>
+      </div>
+    </header>
+
+    <!-- ─── AUTH SCREEN ─────────────────────────────────────────────── -->
+    <section id="authScreen" class="gl-screen">
+      <div class="gl-card">
+        <h2>Вход в защитения канал</h2>
+        <p class="gl-sub">Влез или си направи акаунт, за да започнеш разговор.</p>
+
+        <div class="gl-tabs">
+          <button class="gl-tab active" data-tab="login">Вход</button>
+          <button class="gl-tab" data-tab="register">Регистрация</button>
+        </div>
+
+        <form id="loginForm" class="gl-form">
+          <input type="text" id="loginUsername" placeholder="Потребителско име" autocomplete="username" required />
+          <input type="password" id="loginPassword" placeholder="Парола" autocomplete="current-password" required />
+          <button type="submit" class="gl-primary-btn">Вход</button>
+        </form>
+
+        <form id="registerForm" class="gl-form" style="display:none;">
+          <input type="text" id="registerUsername" placeholder="Потребителско име" autocomplete="username" required />
+          <input type="password" id="registerPassword" placeholder="Парола (мин. 6 символа)" autocomplete="new-password" required />
+          <button type="submit" class="gl-primary-btn">Регистрация</button>
+        </form>
+
+        <p class="gl-error" id="authError"></p>
+      </div>
+    </section>
+
+    <!-- ─── DEPARTMENT SCREEN ───────────────────────────────────────── -->
+    <section id="deptScreen" class="gl-screen" style="display:none;">
+      <div class="gl-card">
+        <h2>С какво да помогнем?</h2>
+        <p class="gl-sub">Избери тема, за да насочим разговора към правилния екип.</p>
+
+        <div class="gl-dept-options">
+          <button class="gl-dept-btn" data-dept="SUPPORT">
+            <span>Поддръжка</span>
+            <span class="gl-sub-small">Технически въпроси, проблеми с акаунта</span>
+          </button>
+          <button class="gl-dept-btn" data-dept="ORDERS">
+            <span>Поръчки</span>
+            <span class="gl-sub-small">Статус, доставка, връщане</span>
+          </button>
+          <button class="gl-dept-btn" data-dept="OTHER">
+            <span>Друго</span>
+            <span class="gl-sub-small">Всичко останало</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── CHAT SCREEN ─────────────────────────────────────────────── -->
+    <section id="chatScreen" class="gl-screen gl-chat-screen" style="display:none;">
+      <main class="gl-page-messages" id="messages"></main>
+      <div class="gl-page-typing" id="typing" style="display:none;">operator is typing…</div>
+      <footer class="gl-page-input">
+        <input type="file" id="fileInput" style="display:none" />
+        <button id="attachBtn" class="gl-icon-btn" title="Прикачи файл" aria-label="Прикачи файл">📎</button>
+        <input type="text" id="textInput" placeholder="Напиши съобщение…" autocomplete="off" />
+        <button id="sendBtn" class="gl-send-btn" disabled>Изпрати</button>
+      </footer>
+    </section>
+
+    <div class="gl-page-footer">end-to-end encrypted · без трети страни</div>
+  </div>
+
+  <!-- Edit config.js to point this page at your GhostLine server -->
+  <script src="/config.js"></script>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Operator {
+  id            String         @id @default(uuid())
+  username      String         @unique
+  passwordHash  String
+  publicKey     String         // X25519 public key (base64) for E2E
+  createdAt     DateTime       @default(now())
+  conversations Conversation[]
+}
+
+model ClientAccount {
+  id            String         @id @default(uuid())
+  username      String         @unique
+  passwordHash  String
+  createdAt     DateTime       @default(now())
+  conversations Conversation[]
+}
+
+enum Department {
+  SUPPORT
+  ORDERS
+  OTHER
+}
+
+model Conversation {
+  id              String         @id @default(uuid())
+  clientAccountId String
+  clientAccount   ClientAccount  @relation(fields: [clientAccountId], references: [id])
+  clientPublicKey String         // client X25519 public key for E2E (per-device)
+  clientLabel     String?        // optional display name given by client
+  department      Department     @default(OTHER)
+  operatorId      String?
+  operator        Operator?      @relation(fields: [operatorId], references: [id])
+  status          ConvStatus     @default(WAITING)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  messages        Message[]
+
+  @@index([clientAccountId])
+}
+
+enum ConvStatus {
+  WAITING
+  ACTIVE
+  CLOSED
+}
+
+model Message {
+  id               String       @id @default(uuid())
+  conversationId   String
+  conversation     Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderType       SenderType
+  // E2E encrypted — server cannot read this
+  encryptedContent String
+  nonce            String       // base64 NaCl nonce (24 bytes)
+  // Optional file
+  fileUrl          String?
+  fileName         String?
+  fileMime         String?
+  timestamp        DateTime     @default(now())
+
+  @@index([conversationId])
+}
+
+enum SenderType {
+  CLIENT
+  OPERATOR
+}

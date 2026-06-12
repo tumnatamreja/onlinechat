@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GhostLine Widget Demo</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, system-ui, sans-serif;
+      background: #f4f1ea;
+      color: #0B0E14;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+    .wrap { max-width: 480px; padding: 24px; }
+    h1 { font-size: 28px; margin-bottom: 8px; }
+    p { color: #555; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Your Website</h1>
+    <p>
+      This is a placeholder page. The GhostLine chat bubble should appear
+      in the bottom-right corner — click it to open a secure, end-to-end
+      encrypted chat with our support team.
+    </p>
+  </div>
+
+  <script
+    src="./dist/ghostline-widget.js"
+    data-server="http://localhost:4000"
+    data-label="Demo Visitor"
+    defer
+  ></script>
+</body>
+</html>

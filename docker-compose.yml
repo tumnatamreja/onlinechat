@@ -1,0 +1,54 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ghostline
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: ghostline
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+
+  server:
+    build: ./server
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://ghostline:changeme@postgres:5432/ghostline
+      JWT_SECRET: change-this-to-a-long-random-string
+      PORT: 4000
+      CORS_ORIGIN: '*'
+      UPLOADS_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
+    ports:
+      - '4000:4000'
+
+  operator:
+    build: ./operator
+    restart: unless-stopped
+    depends_on:
+      - server
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    ports:
+      - '3000:3000'
+
+  client:
+    build: ./client
+    restart: unless-stopped
+    depends_on:
+      - server
+    volumes:
+      - ./client/public/config.js:/usr/share/nginx/html/config.js:ro
+    ports:
+      - '8080:80'
+
+volumes:
+  pgdata:
+  uploads:
