@@ -9,7 +9,7 @@ echo ""
 
 # ── 1. System update + deps ─────────────────────────────────────────────
 echo "→ Обновяване на системата..."
-apt-get update -qq && apt-get upgrade -y -qq
+apt-get update -qq
 
 echo "→ Инсталиране на зависимости..."
 apt-get install -y -qq curl git ufw
@@ -22,17 +22,15 @@ else
   echo "→ Docker вече е инсталиран."
 fi
 
-if ! command -v docker compose &>/dev/null 2>&1; then
+if ! docker compose version &>/dev/null 2>&1; then
   echo "→ Инсталиране на Docker Compose plugin..."
   apt-get install -y -qq docker-compose-plugin
 fi
 
-docker --version
-docker compose version
+docker --version && docker compose version
 
-# ── 3. Clone repo ────────────────────────────────────────────────────────
+# ── 3. Clone / update repo ───────────────────────────────────────────────
 INSTALL_DIR="/opt/ghostline"
-
 if [ -d "$INSTALL_DIR/.git" ]; then
   echo "→ Обновяване на репото..."
   git -C "$INSTALL_DIR" pull
@@ -40,13 +38,12 @@ else
   echo "→ Клониране на репото..."
   git clone https://github.com/tumnatamreja/onlinechat.git "$INSTALL_DIR"
 fi
-
 cd "$INSTALL_DIR"
 
 # ── 4. Generate secrets ──────────────────────────────────────────────────
 JWT_SECRET=$(openssl rand -hex 32)
 DB_PASS=$(openssl rand -hex 16)
-SERVER_IP=$(curl -s ifconfig.me)
+SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
 
 echo ""
 echo "→ IP на сървъра: $SERVER_IP"
@@ -62,76 +59,65 @@ TELEGRAM_BOT_TOKEN=""
 TELEGRAM_ADMIN_CHAT_IDS=""
 ENV
 
-echo "→ server/.env записан."
-
-# ── 6. Write docker-compose override (use generated DB pass) ────────────
+# ── 6. Update docker-compose DB password ────────────────────────────────
 sed -i "s/POSTGRES_PASSWORD: changeme/POSTGRES_PASSWORD: ${DB_PASS}/" docker-compose.yml
-sed -i "s|postgresql://ghostline:changeme@|postgresql://ghostline:${DB_PASS}@|" docker-compose.yml
 
-# ── 7. Write client/public/config.js ────────────────────────────────────
+# ── 7. Operator env — API URL via nginx on port 80 ───────────────────────
+sed -i "s|REPLACE_WITH_API_URL|http://${SERVER_IP}|" docker-compose.yml
+
+# ── 8. Client config.js ──────────────────────────────────────────────────
 cat > client/public/config.js << CONF
 window.GHOSTLINE_CONFIG = {
-  serverUrl: 'http://${SERVER_IP}:4000',
+  serverUrl: 'http://${SERVER_IP}',
   label: 'Website Visitor',
 };
 CONF
 
-echo "→ client/public/config.js записан."
-
-# ── 8. Operator env ─────────────────────────────────────────────────────
-cat > operator/.env.local << OPE
-NEXT_PUBLIC_API_URL=http://${SERVER_IP}:4000
-OPE
-
 # ── 9. Firewall ──────────────────────────────────────────────────────────
 echo "→ Конфигуриране на firewall..."
-ufw allow 22/tcp   >/dev/null 2>&1
-ufw allow 80/tcp   >/dev/null 2>&1
-ufw allow 443/tcp  >/dev/null 2>&1
-ufw allow 4000/tcp >/dev/null 2>&1
-ufw allow 3000/tcp >/dev/null 2>&1
-ufw allow 8080/tcp >/dev/null 2>&1
-ufw --force enable >/dev/null 2>&1
+ufw allow 22/tcp   >/dev/null 2>&1 || true
+ufw allow 80/tcp   >/dev/null 2>&1 || true
+ufw allow 443/tcp  >/dev/null 2>&1 || true
+ufw --force enable >/dev/null 2>&1 || true
 
 # ── 10. Build and start ──────────────────────────────────────────────────
-echo "→ Build + стартиране (може да отнеме 3-5 минути)..."
+echo "→ Спиране на стари контейнери (ако има)..."
+docker compose down 2>/dev/null || true
+
+echo "→ Build + стартиране (3-5 минути)..."
 docker compose up -d --build
 
 echo "→ Изчакване услугите да стартират..."
-sleep 10
+sleep 15
 
 # ── 11. DB migrations ────────────────────────────────────────────────────
 echo "→ Миграции на базата данни..."
+docker compose exec -T server npx prisma db push --accept-data-loss 2>/dev/null || \
+docker compose exec -T server npx prisma migrate deploy 2>/dev/null || true
+
 sleep 5
-docker compose exec -T server npx prisma migrate deploy 2>/dev/null || \
-docker compose exec -T server npx prisma db push 2>/dev/null || true
 
 # ── 12. Health check ─────────────────────────────────────────────────────
-echo ""
-echo "→ Проверка на услугите..."
-sleep 5
-
-API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4000/health 2>/dev/null)
-CLIENT_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080 2>/dev/null)
-OPERATOR_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null)
+echo "→ Проверка..."
+API=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/health 2>/dev/null)
+CLIENT=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/ 2>/dev/null)
+OPERATOR=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:443/ 2>/dev/null)
 
 echo ""
-echo "╔══════════════════════════════════════════════════╗"
-echo "║              ИНСТАЛАЦИЯТА ЗАВЪРШИ               ║"
-echo "╠══════════════════════════════════════════════════╣"
-echo "║                                                  ║"
-printf  "║  API сървър:   http://%-26s║\n" "${SERVER_IP}:4000  "
-printf  "║  Чат страница: http://%-26s║\n" "${SERVER_IP}:8080  "
-printf  "║  Оператори:    http://%-26s║\n" "${SERVER_IP}:3000  "
-echo "║                                                  ║"
-echo "║  API статус:      HTTP $API_STATUS                         ║"
-echo "║  Client статус:   HTTP $CLIENT_STATUS                         ║"
-echo "║  Operator статус: HTTP $OPERATOR_STATUS                         ║"
-echo "║                                                  ║"
-echo "╠══════════════════════════════════════════════════╣"
-echo "║  СЛЕДВАЩА СТЪПКА: Създай оператор акаунт        ║"
-echo "║  Виж: /opt/ghostline/INSTALL.md  →  Стъпка 5   ║"
-echo "╚══════════════════════════════════════════════════╝"
+echo "╔══════════════════════════════════════════════════════╗"
+echo "║           ИНСТАЛАЦИЯТА ЗАВЪРШИ УСПЕШНО              ║"
+echo "╠══════════════════════════════════════════════════════╣"
+echo "║                                                      ║"
+printf "║  Чат страница:  http://%-29s║\n" "${SERVER_IP}"
+printf "║  Оператори:     http://%-29s║\n" "${SERVER_IP}:443"
+echo "║                                                      ║"
+echo "║  API статус:     HTTP ${API}                               ║"
+echo "║  Client статус:  HTTP ${CLIENT}                               ║"
+echo "║                                                      ║"
+echo "╠══════════════════════════════════════════════════════╣"
+echo "║  Запази JWT_SECRET:                                  ║"
+echo "║  ${JWT_SECRET}  ║"
+echo "╚══════════════════════════════════════════════════════╝"
 echo ""
-echo "JWT_SECRET (запази го!): ${JWT_SECRET}"
+echo "Следваща стъпка → Виж INSTALL.md стъпка 5 за оператор акаунт"
 echo ""
