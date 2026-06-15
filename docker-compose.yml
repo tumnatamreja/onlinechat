@@ -26,7 +26,7 @@ services:
     depends_on:
       - server
     environment:
-      NEXT_PUBLIC_API_URL: REPLACE_WITH_API_URL
+      NEXT_PUBLIC_API_URL: http://78.17.71.141
 
   client:
     build: ./client
