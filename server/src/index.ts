@@ -8,6 +8,7 @@ import authRoutes from './routes/auth';
 import clientAuthRoutes from './routes/clientAuth';
 import uploadRoutes from './routes/upload';
 import conversationRoutes from './routes/conversations';
+import setupRoutes from './routes/setup';
 import { setupSocket } from './socket';
 
 const app = express();
@@ -25,6 +26,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/client-auth', clientAuthRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/conversations', conversationRoutes);
+app.use('/api/setup', setupRoutes);
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
