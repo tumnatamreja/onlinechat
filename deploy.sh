@@ -33,7 +33,8 @@ docker --version && docker compose version
 INSTALL_DIR="/opt/ghostline"
 if [ -d "$INSTALL_DIR/.git" ]; then
   echo "→ Обновяване на репото..."
-  git -C "$INSTALL_DIR" pull
+  git -C "$INSTALL_DIR" reset --hard HEAD
+  git -C "$INSTALL_DIR" pull origin main
 else
   echo "→ Клониране на репото..."
   git clone https://github.com/tumnatamreja/onlinechat.git "$INSTALL_DIR"
