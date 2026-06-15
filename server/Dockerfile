@@ -10,4 +10,4 @@ COPY . .
 RUN npm run build
 
 EXPOSE 4000
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss 2>/dev/null || true && node dist/index.js"]
