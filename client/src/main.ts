@@ -93,11 +93,17 @@ tabs.forEach((tab) => {
   });
 });
 
-loginForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
+loginForm.addEventListener('submit', async (e) => { e.preventDefault(); await doLogin(); });
+document.getElementById('loginBtn')!.addEventListener('click', doLogin);
+
+registerForm.addEventListener('submit', async (e) => { e.preventDefault(); await doRegister(); });
+document.getElementById('registerBtn')!.addEventListener('click', doRegister);
+
+async function doLogin() {
   authError.textContent = '';
   const username = (document.getElementById('loginUsername') as HTMLInputElement).value.trim();
   const password = (document.getElementById('loginPassword') as HTMLInputElement).value;
+  if (!username || !password) { authError.textContent = 'Попълни потребителско ime и парола'; return; }
   try {
     const { token, account } = await login(serverUrl, username, password);
     setAuth(token, account.username);
@@ -105,13 +111,14 @@ loginForm.addEventListener('submit', async (e) => {
   } catch (err: any) {
     authError.textContent = err.message || 'Грешка при вход';
   }
-});
+}
 
-registerForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
+async function doRegister() {
   authError.textContent = '';
   const username = (document.getElementById('registerUsername') as HTMLInputElement).value.trim();
   const password = (document.getElementById('registerPassword') as HTMLInputElement).value;
+  if (!username || !password) { authError.textContent = 'Попълни потребителско ime и парола'; return; }
+  if (password.length < 6) { authError.textContent = 'Паролата трябва да е поне 6 символа'; return; }
   try {
     const { token, account } = await register(serverUrl, username, password);
     setAuth(token, account.username);
@@ -119,7 +126,7 @@ registerForm.addEventListener('submit', async (e) => {
   } catch (err: any) {
     authError.textContent = err.message || 'Грешка при регистрация';
   }
-});
+}
 
 logoutBtn.addEventListener('click', () => {
   clearAuth();
