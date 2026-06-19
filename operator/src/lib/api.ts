@@ -1,4 +1,7 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+// NOTE: process.env.NEXT_PUBLIC_API_URL gets baked in at `next build` time,
+// not at container runtime — so docker-compose `environment:` has no effect
+// on it. We hardcode the server URL here instead, same approach as client/.
+export const API_URL = 'http://78.17.71.141';
 
 export function getToken(): string | null {
   if (typeof window === 'undefined') return null;

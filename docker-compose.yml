@@ -25,8 +25,6 @@ services:
     restart: unless-stopped
     depends_on:
       - server
-    environment:
-      NEXT_PUBLIC_API_URL: http://78.17.71.141
 
   client:
     build: ./client

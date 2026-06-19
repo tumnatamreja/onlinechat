@@ -31,7 +31,7 @@ if (!config?.serverUrl) {
     '</p>';
   throw new Error('GHOSTLINE_CONFIG.serverUrl is required');
 }
-const serverUrl = config.serverUrl;
+const serverUrl = config.serverUrl.trim().replace(/\/+$/, '');
 
 const { secretKey, publicKey } = getOrCreateKeyPair();
 let operatorPublicKey: string | null = null;
@@ -109,7 +109,8 @@ async function doLogin() {
     setAuth(token, account.username);
     showScreen('department');
   } catch (err: any) {
-    authError.textContent = err.message || 'Грешка при вход';
+    console.error('Login error:', err);
+    authError.textContent = `${err.name || 'Error'}: ${err.message || err}`;
   }
 }
 
@@ -124,7 +125,8 @@ async function doRegister() {
     setAuth(token, account.username);
     showScreen('department');
   } catch (err: any) {
-    authError.textContent = err.message || 'Грешка при регистрация';
+    console.error('Register error:', err);
+    authError.textContent = `${err.name || 'Error'}: ${err.message || err}`;
   }
 }
 
