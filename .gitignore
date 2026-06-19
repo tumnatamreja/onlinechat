@@ -32,3 +32,4 @@ npm-debug.log*
 
 # Local env — not to be overwritten by git reset
 server/.env
+postgres.env

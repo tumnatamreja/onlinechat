@@ -41,15 +41,33 @@ else
 fi
 cd "$INSTALL_DIR"
 
-# ── 4. Generate secrets ──────────────────────────────────────────────────
-JWT_SECRET=$(openssl rand -hex 32)
-DB_PASS=$(openssl rand -hex 16)
 SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
-
 echo ""
 echo "→ IP на сървъра: $SERVER_IP"
 
-# ── 5. Write server/.env ─────────────────────────────────────────────────
+# ── 4. Secrets — these live in gitignored files, so `git reset --hard` +
+#      `git pull` (step 3 above) NEVER touches or resets them. This is the
+#      single source of truth across every re-run of this script. ─────────
+
+# postgres.env — DB password, generated ONCE, persists forever after
+if [ ! -f postgres.env ]; then
+  echo "→ Първо стартиране — генериране на DB парола."
+  echo "POSTGRES_PASSWORD=$(openssl rand -hex 16)" > postgres.env
+else
+  echo "→ Намерена съществуваща postgres.env — преизползва се."
+fi
+DB_PASS=$(grep POSTGRES_PASSWORD postgres.env | cut -d= -f2)
+
+# server/.env — JWT secret, generated ONCE, persists forever after
+if [ ! -f server/.env ] || ! grep -q "^JWT_SECRET=" server/.env; then
+  echo "→ Генериране на JWT secret."
+  JWT_SECRET=$(openssl rand -hex 32)
+else
+  JWT_SECRET=$(grep "^JWT_SECRET=" server/.env | head -1 | sed -E 's/JWT_SECRET="?([^"]*)"?/\1/')
+fi
+
+# ── 5. Write server/.env (DATABASE_URL always derived fresh from postgres.env,
+#      everything else preserved/regenerated as needed) ───────────────────
 cat > server/.env << ENV
 DATABASE_URL="postgresql://ghostline:${DB_PASS}@postgres:5432/ghostline"
 JWT_SECRET="${JWT_SECRET}"
@@ -60,13 +78,7 @@ TELEGRAM_BOT_TOKEN=""
 TELEGRAM_ADMIN_CHAT_IDS=""
 ENV
 
-# ── 6. Update docker-compose DB password ────────────────────────────────
-sed -i "s/POSTGRES_PASSWORD: changeme/POSTGRES_PASSWORD: ${DB_PASS}/" docker-compose.yml
-
-# ── 7. Operator env — API URL via nginx on port 80 ───────────────────────
-sed -i "s|REPLACE_WITH_API_URL|http://${SERVER_IP}|" docker-compose.yml
-
-# ── 8. Client config.js ──────────────────────────────────────────────────
+# ── 6. Client config.js ──────────────────────────────────────────────────
 cat > client/public/config.js << CONF
 window.GHOSTLINE_CONFIG = {
   serverUrl: 'http://${SERVER_IP}',
@@ -74,39 +86,34 @@ window.GHOSTLINE_CONFIG = {
 };
 CONF
 
-# ── 9. Firewall ──────────────────────────────────────────────────────────
+# ── 7. Firewall ──────────────────────────────────────────────────────────
 echo "→ Конфигуриране на firewall..."
 ufw allow 22/tcp   >/dev/null 2>&1 || true
 ufw allow 80/tcp   >/dev/null 2>&1 || true
 ufw allow 443/tcp  >/dev/null 2>&1 || true
 ufw --force enable >/dev/null 2>&1 || true
 
-# ── 10. Build and start ──────────────────────────────────────────────────
-echo "→ Спиране на стари контейнери (ако има)..."
-docker compose down 2>/dev/null || true
-
+# ── 8. Build and start ────────────────────────────────────────────────────
 echo "→ Build + стартиране (3-5 минути)..."
 docker compose up -d --build
 
 echo "→ Изчакване услугите да стартират..."
 sleep 15
 
-# ── 11. DB migrations ────────────────────────────────────────────────────
-echo "→ Миграции на базата данни..."
-docker compose exec -T server npx prisma db push --accept-data-loss 2>/dev/null || \
-docker compose exec -T server npx prisma migrate deploy 2>/dev/null || true
+# ── 9. DB schema sync ──────────────────────────────────────────────────────
+echo "→ Синхронизация на схемата на базата данни..."
+docker compose exec -T server npx prisma db push --accept-data-loss 2>&1 | tail -5
 
-sleep 5
+sleep 3
 
-# ── 12. Health check ─────────────────────────────────────────────────────
+# ── 10. Health check ────────────────────────────────────────────────────────
 echo "→ Проверка..."
 API=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/health 2>/dev/null)
 CLIENT=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/ 2>/dev/null)
-OPERATOR=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:443/ 2>/dev/null)
 
 echo ""
 echo "╔══════════════════════════════════════════════════════╗"
-echo "║           ИНСТАЛАЦИЯТА ЗАВЪРШИ УСПЕШНО              ║"
+echo "║           ИНСТАЛАЦИЯТА ЗАВЪРШИ                       ║"
 echo "╠══════════════════════════════════════════════════════╣"
 echo "║                                                      ║"
 printf "║  Чат страница:  http://%-29s║\n" "${SERVER_IP}"
@@ -115,10 +122,7 @@ echo "║                                                      ║"
 echo "║  API статус:     HTTP ${API}                               ║"
 echo "║  Client статус:  HTTP ${CLIENT}                               ║"
 echo "║                                                      ║"
-echo "╠══════════════════════════════════════════════════════╣"
-echo "║  Запази JWT_SECRET:                                  ║"
-echo "║  ${JWT_SECRET}  ║"
 echo "╚══════════════════════════════════════════════════════╝"
 echo ""
-echo "Следваща стъпка → Виж INSTALL.md стъпка 5 за оператор акаунт"
+echo "Първи оператор → http://${SERVER_IP}:443/setup"
 echo ""
