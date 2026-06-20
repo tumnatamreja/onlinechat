@@ -110,7 +110,7 @@ export default function DashboardPage() {
   }, [conversations]);
 
   return (
-    <main className="flex-1 p-8 overflow-y-auto">
+    <main className="flex-1 p-4 md:p-8 overflow-y-auto">
       <header className="mb-6">
         <h1 className="font-display text-xl text-bone">Разговори</h1>
         <p className="text-mist text-sm mt-1">
