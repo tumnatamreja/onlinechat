@@ -61,7 +61,7 @@ export default function SetupPage() {
   return (
     <main style={{ minHeight:'100vh', background:'#0B0E14', display:'flex', alignItems:'center', justifyContent:'center', padding:24, fontFamily:'Inter,sans-serif' }}>
       <div style={{ width:'100%', maxWidth:360 }}>
-        <p style={{ fontFamily:'monospace', fontSize:11, letterSpacing:'0.3em', textTransform:'uppercase', color:'#5EE6A8', marginBottom:20 }}>● ghostline · setup</p>
+        <p style={{ fontFamily:'monospace', fontSize:11, letterSpacing:'0.3em', textTransform:'uppercase', color:'#5EE6A8', marginBottom:20 }}>● 7hills private chat · setup</p>
 
         {step === 'idle' && <>
           <h1 style={{ color:'#E9EDF3', fontSize:22, marginBottom:8, fontWeight:600 }}>Създай оператор акаунт</h1>

@@ -7,6 +7,7 @@ import { getOrCreateKeyPair } from '@/lib/keychain';
 import { encryptMessage, decryptMessage } from '@/lib/crypto';
 import { apiFetch, API_URL } from '@/lib/api';
 import { DecryptedMessage, Message, Department, DEPARTMENT_LABELS } from '@/lib/types';
+import { avatarColor } from '@/lib/ui';
 
 export default function ConversationPage() {
   const { convId } = useParams<{ convId: string }>();
@@ -205,26 +206,44 @@ export default function ConversationPage() {
   return (
     <main className="flex-1 flex flex-col h-screen">
       <header className="border-b border-line px-6 py-4 flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-display text-sm text-bone">
-              {clientLabel || `conversation_${String(convId).slice(0, 8)}`}
-            </h1>
-            {department && (
-              <span className="text-[10px] font-display uppercase tracking-wider text-signal border border-signal/30 bg-signal/5 rounded-full px-2 py-0.5">
-                {DEPARTMENT_LABELS[department] ?? department}
-              </span>
-            )}
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="text-mist hover:text-bone transition-colors flex-shrink-0"
+            aria-label="Назад"
+          >
+            ←
+          </button>
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center font-display text-sm font-semibold flex-shrink-0"
+            style={{
+              backgroundColor: `${avatarColor(clientLabel || convId)}22`,
+              color: avatarColor(clientLabel || convId),
+            }}
+          >
+            {(clientLabel || '?').charAt(0).toUpperCase()}
           </div>
-          <p className="text-mist text-xs mt-0.5 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-signal" />
-            end-to-end encrypted
-            {clientTyping && <span className="text-signal ml-2 animate-pulse">client is typing…</span>}
-          </p>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className="font-display text-sm text-bone truncate">
+                {clientLabel || `conversation_${String(convId).slice(0, 8)}`}
+              </h1>
+              {department && (
+                <span className="text-[10px] font-display uppercase tracking-wider text-signal border border-signal/30 bg-signal/5 rounded-full px-2 py-0.5 flex-shrink-0">
+                  {DEPARTMENT_LABELS[department] ?? department}
+                </span>
+              )}
+            </div>
+            <p className="text-mist text-xs mt-0.5 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-signal flex-shrink-0" />
+              криптирано
+              {clientTyping && <span className="text-signal ml-1 animate-pulse">пише…</span>}
+            </p>
+          </div>
         </div>
         <button
           onClick={closeConversation}
-          className="text-xs font-display uppercase tracking-wider text-ember border border-ember/30 rounded px-3 py-1.5 hover:bg-ember/10 transition-colors"
+          className="text-xs font-display uppercase tracking-wider text-ember border border-ember/30 rounded px-3 py-1.5 hover:bg-ember/10 transition-colors flex-shrink-0"
         >
           Затвори
         </button>

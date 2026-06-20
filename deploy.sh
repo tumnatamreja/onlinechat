@@ -66,6 +66,15 @@ else
   JWT_SECRET=$(grep "^JWT_SECRET=" server/.env | head -1 | sed -E 's/JWT_SECRET="?([^"]*)"?/\1/')
 fi
 
+# Telegram credentials — preserved if already set (never overwritten with
+# blanks on redeploy; set them once via VPS console, they stick forever)
+if [ -f server/.env ] && grep -q "^TELEGRAM_BOT_TOKEN=" server/.env; then
+  TG_TOKEN=$(grep "^TELEGRAM_BOT_TOKEN=" server/.env | head -1 | sed -E 's/TELEGRAM_BOT_TOKEN="?([^"]*)"?/\1/')
+fi
+if [ -f server/.env ] && grep -q "^TELEGRAM_ADMIN_CHAT_IDS=" server/.env; then
+  TG_CHATS=$(grep "^TELEGRAM_ADMIN_CHAT_IDS=" server/.env | head -1 | sed -E 's/TELEGRAM_ADMIN_CHAT_IDS="?([^"]*)"?/\1/')
+fi
+
 # ── 5. Write server/.env (DATABASE_URL always derived fresh from postgres.env,
 #      everything else preserved/regenerated as needed) ───────────────────
 cat > server/.env << ENV
@@ -74,8 +83,8 @@ JWT_SECRET="${JWT_SECRET}"
 PORT=4000
 CORS_ORIGIN="*"
 UPLOADS_DIR="/app/uploads"
-TELEGRAM_BOT_TOKEN=""
-TELEGRAM_ADMIN_CHAT_IDS=""
+TELEGRAM_BOT_TOKEN="${TG_TOKEN}"
+TELEGRAM_ADMIN_CHAT_IDS="${TG_CHATS}"
 ENV
 
 # ── 6. Client config.js ──────────────────────────────────────────────────

@@ -268,7 +268,7 @@ export function setupSocket(io: Server) {
             createdAt: conv.createdAt,
           });
           notifyTelegram(
-            `🔔 Нов разговор\nКлиент: ${conv.clientLabel}\nОтдел: ${deptLabel}\n\nОтвори операторската конзола, за да отговориш.`
+            `🔔 7Hills Private Chat — нов разговор\nКлиент: ${conv.clientLabel}\nОтдел: ${deptLabel}\n\nОтвори админ панела, за да отговориш.`
           );
         }
       }
@@ -299,7 +299,7 @@ export function setupSocket(io: Server) {
         if (conv && conv.status === 'WAITING') {
           const deptLabel = DEPARTMENT_LABELS[conv.department] || conv.department;
           notifyTelegram(
-            `💬 Ново съобщение (чака оператор)\nКлиент: ${conv.clientLabel}\nОтдел: ${deptLabel}`
+            `💬 7Hills Private Chat — ново съобщение (чака отговор)\nКлиент: ${conv.clientLabel}\nОтдел: ${deptLabel}`
           );
         }
       }

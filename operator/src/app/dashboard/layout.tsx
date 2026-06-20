@@ -37,7 +37,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
       <main className="min-h-screen flex items-center justify-center">
         <p className="text-mist font-display text-sm tracking-widest animate-pulse">
-          establishing secure session…
+          установяване на връзка…
         </p>
       </main>
     );
@@ -50,7 +50,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-signal pulse-dot" />
             <span className="font-display text-xs uppercase tracking-[0.3em] text-mist">
-              ghostline
+              7hills private chat
             </span>
           </div>
           <p className="text-bone text-sm font-display">{username}</p>
@@ -61,7 +61,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             href="/dashboard"
             className="block px-3 py-2 rounded text-sm font-body text-bone hover:bg-line/60 transition-colors"
           >
-            Conversations
+            Разговори
           </a>
         </nav>
 
@@ -70,7 +70,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             onClick={handleLogout}
             className="w-full text-left px-3 py-2 rounded text-sm font-body text-mist hover:text-ember hover:bg-ember/10 transition-colors"
           >
-            Sign out
+            Изход
           </button>
         </div>
       </aside>

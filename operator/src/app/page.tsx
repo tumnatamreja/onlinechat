@@ -54,11 +54,11 @@ export default function LoginPage() {
           <div className="inline-flex items-center gap-2 mb-3">
             <span className="w-2 h-2 rounded-full bg-signal pulse-dot" />
             <span className="font-display text-xs uppercase tracking-[0.3em] text-mist">
-              ghostline
+              admin panel
             </span>
           </div>
           <h1 className="font-display text-2xl text-bone encrypted-glow">
-            Operator Console
+            7Hills Private Chat
           </h1>
           <p className="text-mist text-sm mt-2">
             Sign in. Your encryption key never leaves this device.

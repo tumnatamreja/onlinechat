@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'GhostLine — Operator Console',
-  description: 'End-to-end encrypted support channel',
+  title: '7Hills Private Chat — Admin',
+  description: 'Криптиран частен чат канал',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
