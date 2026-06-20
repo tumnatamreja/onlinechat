@@ -16,6 +16,7 @@ export default function ConversationPage() {
   const [clientPublicKey, setClientPublicKey] = useState<string | null>(null);
   const clientPublicKeyRef = useRef<string | null>(null);
   const [department, setDepartment] = useState<Department | null>(null);
+  const [clientLabel, setClientLabel] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const [clientTyping, setClientTyping] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -71,16 +72,24 @@ export default function ConversationPage() {
   }, [convId]);
 
   // Fetch client public key once (needed for decryption + sending)
-  useEffect(() => {
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  function fetchConvDetails() {
+    setFetchError(null);
     apiFetch(`/api/conversations/${convId}`)
       .then((data) => {
         setClientPublicKey(data.clientPublicKey);
         setDepartment(data.department);
+        setClientLabel(data.clientLabel);
       })
-      .catch(() => {
-        /* fallback handled inline below if endpoint missing */
+      .catch((err: any) => {
+        setFetchError(err.message || 'Неуспешно зареждане на разговора');
       });
-  }, [convId]);
+  }
+
+  useEffect(() => {
+    fetchConvDetails();
+  }, [convId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-decrypt all messages whenever clientPublicKey becomes available
   useEffect(() => {
@@ -198,7 +207,9 @@ export default function ConversationPage() {
       <header className="border-b border-line px-6 py-4 flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-display text-sm text-bone">conversation_{String(convId).slice(0, 8)}</h1>
+            <h1 className="font-display text-sm text-bone">
+              {clientLabel || `conversation_${String(convId).slice(0, 8)}`}
+            </h1>
             {department && (
               <span className="text-[10px] font-display uppercase tracking-wider text-signal border border-signal/30 bg-signal/5 rounded-full px-2 py-0.5">
                 {DEPARTMENT_LABELS[department] ?? department}
@@ -215,9 +226,21 @@ export default function ConversationPage() {
           onClick={closeConversation}
           className="text-xs font-display uppercase tracking-wider text-ember border border-ember/30 rounded px-3 py-1.5 hover:bg-ember/10 transition-colors"
         >
-          Close chat
+          Затвори
         </button>
       </header>
+
+      {fetchError && (
+        <div className="px-6 py-3 bg-ember/10 border-b border-ember/30 flex items-center justify-between">
+          <p className="text-ember text-xs font-body">⚠ {fetchError}</p>
+          <button
+            onClick={fetchConvDetails}
+            className="text-[10px] font-display uppercase tracking-wider text-ember border border-ember/30 rounded px-2 py-1 hover:bg-ember/10 transition-colors"
+          >
+            Опитай пак
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto px-6 py-6 space-y-3 scanline-bg">
         {messages.map((m) => (
@@ -276,7 +299,7 @@ export default function ConversationPage() {
             value={input}
             onChange={(e) => handleInputChange(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-            placeholder={clientPublicKey ? 'Type a message…' : 'Waiting for client key exchange…'}
+            placeholder={clientPublicKey ? 'Напиши съобщение…' : 'Зареждане…'}
             disabled={!clientPublicKey}
             className="flex-1 bg-ink border border-line rounded px-3 py-2.5 text-bone font-body text-sm focus:outline-none focus:border-signal transition-colors disabled:opacity-50"
           />
@@ -285,7 +308,7 @@ export default function ConversationPage() {
             disabled={!input.trim() || !clientPublicKey}
             className="bg-signal text-ink font-display text-xs uppercase tracking-wider rounded px-4 py-2.5 hover:bg-signal/90 transition-colors disabled:opacity-40"
           >
-            Send
+            Изпрати
           </button>
         </div>
       </div>

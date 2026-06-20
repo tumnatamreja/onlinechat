@@ -87,9 +87,9 @@ export default function DashboardPage() {
   return (
     <main className="flex-1 p-8 overflow-y-auto">
       <header className="mb-6">
-        <h1 className="font-display text-xl text-bone">Conversations</h1>
+        <h1 className="font-display text-xl text-bone">Разговори</h1>
         <p className="text-mist text-sm mt-1">
-          {waiting.length} waiting · {active.length} active
+          {waiting.length} чакащи · {active.length} активни
         </p>
       </header>
 
@@ -112,7 +112,7 @@ export default function DashboardPage() {
       {waiting.length > 0 && (
         <section className="mb-8">
           <h2 className="font-display text-xs uppercase tracking-[0.2em] text-ember mb-3">
-            Waiting
+            Чакащи
           </h2>
           <div className="space-y-2">
             {waiting.map((c) => (
@@ -135,7 +135,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
                 <span className="text-xs font-display uppercase tracking-wider text-ember border border-ember/30 rounded px-2 py-1">
-                  Claim
+                  Отвори
                 </span>
               </button>
             ))}
@@ -145,10 +145,10 @@ export default function DashboardPage() {
 
       <section>
         <h2 className="font-display text-xs uppercase tracking-[0.2em] text-signal mb-3">
-          Active
+          Активни
         </h2>
         {active.length === 0 ? (
-          <p className="text-mist text-sm">No active conversations.</p>
+          <p className="text-mist text-sm">Няма активни разговори.</p>
         ) : (
           <div className="space-y-2">
             {active.map((c) => (
@@ -167,7 +167,7 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <p className="text-mist text-xs mt-0.5">
-                    handled by {c.operator?.username || 'you'}
+                    обработва {c.operator?.username || 'теб'}
                   </p>
                 </div>
                 <span className="w-2 h-2 rounded-full bg-signal" />

@@ -204,30 +204,44 @@ export function setupSocket(io: Server) {
             data: {
               clientAccountId,
               clientPublicKey,
-              clientLabel: label || account.username,
+              clientLabel: account.username,
               department: department || 'OTHER',
               status: 'WAITING',
             },
           });
           isNew = true;
-        } else if (conv.clientPublicKey !== clientPublicKey) {
-          // Client reconnected from a different device/browser — refresh the
-          // public key on file. Note: this means messages encrypted to the
-          // old key become undecryptable going forward (see README caveat).
-          conv = await prisma.conversation.update({
-            where: { id: conv.id },
-            data: { clientPublicKey },
-          });
+        } else {
+          const updates: { clientPublicKey?: string; clientLabel?: string } = {};
+          if (conv.clientPublicKey !== clientPublicKey) {
+            // Client reconnected from a different device/browser — refresh the
+            // public key on file. Note: this means messages encrypted to the
+            // old key become undecryptable going forward (see README caveat).
+            updates.clientPublicKey = clientPublicKey;
+          }
+          if (conv.clientLabel !== account.username) {
+            updates.clientLabel = account.username;
+          }
+          if (Object.keys(updates).length > 0) {
+            conv = await prisma.conversation.update({ where: { id: conv.id }, data: updates });
+          }
         }
 
         socket.join(`conv:${conv.id}`);
         socket.data.conversationId = conv.id;
 
-        let operatorPublicKey: string | null = null;
-        if (conv.operatorId) {
-          const op = await prisma.operator.findUnique({ where: { id: conv.operatorId } });
-          operatorPublicKey = op?.publicKey ?? null;
-        }
+        // Resolve which operator's public key the client should encrypt to.
+        // If a specific operator has already claimed this conversation, use
+        // theirs. Otherwise fall back to the team's default (oldest/first)
+        // operator account — this is what lets a client start writing
+        // immediately, Telegram-style, without waiting for someone to claim
+        // the chat first. (For a single shared support account this is
+        // exactly right; with multiple independent operators, only the
+        // default operator's secret key can decrypt unclaimed chats until
+        // they're claimed.)
+        const targetOperator = conv.operatorId
+          ? await prisma.operator.findUnique({ where: { id: conv.operatorId } })
+          : await prisma.operator.findFirst({ orderBy: { createdAt: 'asc' } });
+        const operatorPublicKey = targetOperator?.publicKey ?? null;
 
         socket.emit('server:joined', {
           conversationId: conv.id,
@@ -236,14 +250,13 @@ export function setupSocket(io: Server) {
           operatorPublicKey,
         });
 
-        // Send existing messages if resuming
-        if (conv.status === 'ACTIVE') {
-          const messages = await prisma.message.findMany({
-            where: { conversationId: conv.id },
-            orderBy: { timestamp: 'asc' },
-          });
-          socket.emit('server:history', { conversationId: conv.id, messages });
-        }
+        // Always send existing history on (re)join — not just when ACTIVE —
+        // so a returning client sees their prior messages immediately.
+        const messages = await prisma.message.findMany({
+          where: { conversationId: conv.id },
+          orderBy: { timestamp: 'asc' },
+        });
+        socket.emit('server:history', { conversationId: conv.id, messages });
 
         if (isNew) {
           const deptLabel = DEPARTMENT_LABELS[conv.department] || conv.department;

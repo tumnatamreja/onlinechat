@@ -261,6 +261,8 @@ function registerSocketHandlers() {
     setOperatorStatus(online);
   });
 
+  let pendingStatus: string | null = null;
+
   socket.on(
     'server:joined',
     ({
@@ -273,10 +275,7 @@ function registerSocketHandlers() {
       operatorPublicKey: string | null;
     }) => {
       operatorPublicKey = opKey;
-
-      if (status === 'WAITING') {
-        appendSystemMessage('Свързахте се със защитен канал. Изчакваме оператор.');
-      }
+      pendingStatus = status;
       updateSendState();
     }
   );
@@ -286,6 +285,10 @@ function registerSocketHandlers() {
     ({ messages }: { conversationId: string; messages: WireMessage[] }) => {
       messagesEl.innerHTML = '';
       messages.forEach((m) => appendMessage(m, decryptFor(m)));
+      if (pendingStatus === 'WAITING' && messages.length === 0) {
+        appendSystemMessage('Свързахте се със защитен канал. Можете да пишете — ще получите отговор скоро.');
+      }
+      pendingStatus = null;
     }
   );
 
